@@ -1,40 +1,95 @@
 <template>
-  <div class="container">
+  <div
+    ref="container"
+    class="container"
+    :style="{ backgroundColor: state.bgColor }"
+  >
     <div>
-      <logo />
-      <h1 class="title">
-        direct-vuex-nuxt-testing
-      </h1>
-      <h2 class="subtitle">
-        My posh Nuxt.js project
-      </h2>
-      <div class="links">
-        <a
-          href="https://nuxtjs.org/"
-          target="_blank"
-          class="button--green"
+      <div>
+        {{ state.count }}
+        /
+        double: {{ state.doubleCount }}
+      </div>
+      <button
+        type="button"
+        @click="handleClick"
+      >
+        increment
+      </button>
+      <div>
+        <button
+          type="button"
+          @click="handleRedClick"
         >
-          Documentation
-        </a>
-        <a
-          href="https://github.com/nuxt/nuxt.js"
-          target="_blank"
-          class="button--grey"
+          red
+        </button>
+        &nbsp;
+        <button
+          type="button"
+          @click="handleBlueClick"
         >
-          GitHub
-        </a>
+          blue
+        </button>
+      </div>
+      <div>
+        IP Address: {{ state.ipAddress }}
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import Vue from 'vue'
-import Logo from '~/components/Logo.vue'
+import { reactive, defineComponent, watchEffect, onMounted, ref, PropType } from '@vue/composition-api'
 
-export default Vue.extend({
-  components: {
-    Logo
+import { store } from '~/store'
+import useVuex from '~/helpers/useVuex'
+
+type Hoge = {
+  name: string
+}
+
+export default defineComponent({
+  props: {
+    testProp: { type: String, default: 'hoge' },
+    testObject: { type: Object as PropType<Hoge>, default: () => ({ name: 'aaaa' }) }
+  },
+
+  setup () {
+    const state = reactive({
+      ipAddress: null,
+      count: useVuex(() => store.state.count),
+      doubleCount: useVuex(() => store.getters.doubleCount),
+      bgColor: store.state.settings.bgColor
+    })
+
+    watchEffect(async () => {
+      const body = await store.dispatch.settings.fetchIPAddress()
+      state.ipAddress = body.origin
+    })
+
+    const container = ref<HTMLElement>(null)
+    onMounted(() => {
+      if (container.value) {
+        container.value.id = 'hoge'
+      }
+    })
+
+    return {
+      state,
+      container,
+
+      handleClick () {
+        store.dispatch.increment()
+      },
+
+      handleRedClick () {
+        store.dispatch.settings.changeToRedBG()
+      },
+
+      handleBlueClick () {
+        store.dispatch.settings.changeToBlueBG()
+      }
+    }
   }
 })
 </script>
@@ -47,6 +102,7 @@ export default Vue.extend({
   justify-content: center;
   align-items: center;
   text-align: center;
+  background-color: #ddd;
 }
 
 .title {
